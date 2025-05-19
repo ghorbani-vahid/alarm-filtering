@@ -85,11 +85,9 @@ filter.gate_flag= 1;                             %gating on or off 1/0
 
 est.filter= filter;
 
-%=== Filtering
 
-%initial prior
 if k==1
-tt_lmb_update= cell(0,1);      %track table for LMB (cell array of structs for individual tracks)
+tt_lmb_update= cell(0,1);          %track table for LMB (cell array of structs for individual tracks)
 end
 
 if k>1
@@ -97,8 +95,7 @@ tt_lmb_update=tt_lmb_update_pre;
 end
 
 
-%recursive filtering
-%for k=1:meas.K
+
   
 
     %joint predict and update, results in GLMB, convert to LMB
@@ -115,7 +112,7 @@ end
     display_diaginfo(tt_lmb_update,k,est,filter,T_predict,T_posterior,T_clean);
 
     est.tt_lmb_update=tt_lmb_update; % Vahid
-%end
+
 
 if k==iter_num %last iteration
     if save=="true"
@@ -152,7 +149,7 @@ end
 
 %create predicted tracks - concatenation of birth and survival
 tt_predict = cat(1, tt_survive, tt_birth); %tt_predict= cat(1,tt_birth,tt_survive);                                                                                %copy track table back to GLMB struct
-%tt_predict= cat(1,tt_birth,tt_survive); 
+
 %gating by tracks
 if filter.gate_flag
     for tabidx=1:length(tt_predict)
@@ -188,14 +185,11 @@ end
 %measurement updated tracks (all pairs)
 allcostm= zeros(length(tt_predict),m);
 
-%Liklihood modification (averaging over recieved updated states from
-%neighboring nodes to eliminate the impact of wrong measurements. should be
-%fine when all birth tracks are the same which is the default.
 
 num_tables = numel(tt);   %tt is the neighboring estimates
 
-%%% comment for S-ALARM
-for tabsidx=1:length(tt_predict)% apply chapman kologrov on neighboring nodes paricles of corrspondinf tracks (tabsidx) which are similar due to the label definition  
+
+for tabsidx=1:length(tt_predict)  
     for index=1:num_tables 
     if tabsidx <= numel(tt(index).tt_lmb_update)
         xtemp_predict= gen_newstate_fn(model,tt(index).tt_lmb_update{tabsidx}.x,'noise');
@@ -216,18 +210,14 @@ for tabidx= 1:length(tt_predict)
         
                 exists = any(cellfun(@(x) isequal(label, x.l), tt(index).tt_lmb_update));
 
-
                 if exists ==1
                
                    new_likelihood= new_likelihood+ or_likelihood;
                 end
 
-            end
-
-                
-                
-            
+            end       
                            
+                        
                 avr_likelihood = or_likelihood; 
                 
                 if new_likelihood > 0
@@ -235,13 +225,9 @@ for tabidx= 1:length(tt_predict)
                 else
                     avr_likelihood = 0 * or_likelihood; 
                 end
-
-              
-
-                
+                        
                
-
-                if num_tables==0 %single node (ST)
+                if num_tables==0 
                     avr_likelihood =or_likelihood;
                 end
 
@@ -472,150 +458,9 @@ end
 end
 
 
-function sorted_particles = kd_tree_matching(tt_lmb_update_x, tt_predict_x)
-    % KD-Tree Based Nearest Neighbor Matching for Particle Sorting
-    % Uses MATLAB's built-in knnsearch for fast nearest neighbor lookup.
-
-    X1 = tt_lmb_update_x; % Updated particles
-    X2 = tt_predict_x; % Predicted particles
-
-    % Ensure feature dimensions match
-    if size(X1, 1) ~= size(X2, 1)
-        error('Dimension mismatch: Particles must have the same feature size.');
-    end
-
-    % Use KD-Tree nearest neighbor search
-    assignment = knnsearch(X2', X1'); % Finds closest X2 point for each X1 point
-
-    % Ensure unique assignments (optional)
-    assignment = unique(assignment, 'stable');
-
-    % Sort particles based on KD-Tree assignments
-    sorted_particles = X1(:, assignment);
-
-    % Ensure output type matches input
-    sorted_particles = cast(sorted_particles, class(tt_lmb_update_x));
-end
-
-
-function sorted_particles = greedy_nearest_neighbor11(tt_lmb_update_x, tt_predict_x)
-    % Greedy Nearest Neighbor Matching for Particle Sorting
-
-    X1 = tt_lmb_update_x; % Updated particles
-    X2 = tt_predict_x; % Predicted particles
-
-    if size(X1, 1) ~= size(X2, 1)
-        error('Dimension mismatch: Particles must have the same feature size.');
-    end
-
-    num_particles = size(X2, 2);  % Ensure the same number of particles
-
-    % Compute pairwise distances
-    cost_matrix = pdist2(X1', X2');
-
-    % Initialize tracking variables
-    assigned_particles = zeros(1, num_particles);  % Store selected indices
-    available_indices = 1:size(X1, 2);  % Indices of available particles
-
-    % Assign each predicted particle greedily
-    for i = 1:num_particles
-        % Find the closest available match for X2(:,i)
-        [~, min_idx] = min(cost_matrix(:, i));
-
-        % Assign this index
-        assigned_particles(i) = available_indices(min_idx);
-
-        % Remove this assigned index from availability to avoid duplicates
-        available_indices(min_idx) = [];
-        cost_matrix(min_idx, :) = Inf; % Prevent reassignment
-    end
-
-    % Sort particles based on assignments
-    sorted_particles = X1(:, assigned_particles);
-
-    % Ensure output size matches `tt_predict_x`
-    if size(sorted_particles, 2) ~= num_particles
-        error('Output size does not match tt_predict_x');
-    end
-
-    % Ensure output type matches input
-    sorted_particles = cast(sorted_particles, class(tt_lmb_update_x));
-end
-
-
-function sorted_particles = sort_particles_hungarian(tt_lmb_update_x, tt_predict_x)
-    % Hungarian Matching for Particle Sorting with Exact Size Matching
-
-    % Extract matrices directly
-    X1 = tt_lmb_update_x; % Updated particles
-    X2 = tt_predict_x; % Predicted particles
-
-    % Ensure they have compatible dimensions
-    if size(X1, 1) ~= size(X2, 1)
-        error('Dimension mismatch: Particles must have the same feature size.');
-    end
-
-    % Compute cost matrix (Euclidean distance)
-    cost_matrix = pdist2(X1', X2'); % Correctly shaped cost matrix
-
-    % Solve assignment using Hungarian algorithm with a large finite cost
-    [row_idx, col_idx] = matchpairs(cost_matrix, 1e6); % Large but finite cost
-
-    % Ensure row_idx contains only unique values
-    row_idx = unique(row_idx, 'stable');
-
-    % Restrict assignments to maintain correct size
-    if length(row_idx) > size(X1, 2)
-        row_idx = row_idx(1:size(X1, 2)); % Trim extra assignments
-    elseif length(row_idx) < size(X1, 2)
-        error('MatchPairs returned fewer assignments than expected.');
-    end
-
-    % Sort the updated particles based on matching order
-    sorted_particles = X1(:, row_idx); 
-
-    % Ensure output is of the same type
-    sorted_particles = cast(sorted_particles, class(tt_lmb_update_x));
-end
 
 
 
-function sorted_particles = greedy_nearest_neighbor(particles_set1, particles_set2)
-    % Function to sort particles from particles_set1 based on nearest neighbor matching with particles_set2
-    
-    num_particles1 = size(particles_set1, 2);
-    num_particles2 = size(particles_set2, 2);
-    
-    if num_particles1 == 0 || num_particles2 == 0
-        sorted_particles = [];
-        return;
-    end
-    
-    sorted_particles = zeros(size(particles_set1));
-    
-    % Track assigned particles
-    assigned_indices = false(1, num_particles2);
-    
-    for i = 1:num_particles1
-        min_dist = inf;
-        best_match_idx = -1;
-        
-        % Find the nearest unassigned neighbor in particles_set2
-        for j = 1:num_particles2
-            if ~assigned_indices(j)
-                dist = norm(particles_set1(:, i) - particles_set2(:, j));
-                if dist < min_dist
-                    min_dist = dist;
-                    best_match_idx = j;
-                end
-            end
-        end
-        
-        if best_match_idx ~= -1
-            sorted_particles(:, i) = particles_set2(:, best_match_idx);
-            assigned_indices(best_match_idx) = true;
-        else
-            sorted_particles(:, i) = particles_set1(:, i); % Keep the original if no match found
-        end
-    end
-end
+
+
+

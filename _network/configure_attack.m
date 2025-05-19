@@ -3,7 +3,7 @@ function [attacked_sensor, attack_scenario, ghost_num] = configure_attack(method
      if strcmpi(attack_scenario, 'deception')
         ghost_num = input('Number of ghosts: ');
     else
-        ghost_num = 0;  % or [] if you prefer an empty indication
+        ghost_num = 0;  
     end
     if strcmp(method, 'ST')
         attacked_sensor = 1;

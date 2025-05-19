@@ -58,11 +58,6 @@ for i = 1:truth.total_tracks
     end
 end
 
-% % Save the figure with high resolution
-% saveas(gcf, 'track_plot.png', 'png');
-% set(gcf, 'PaperPositionMode', 'auto');
-% print(gcf, 'track_plot_high_res', '-dpng', '-r300'); % High resolution
-
 
 %%%%%%%%%%%
 % Plot ground truths
