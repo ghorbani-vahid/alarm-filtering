@@ -18,5 +18,11 @@ https://ba-tuong.vo-au.com/codes.html
 - Built upon the well-known RFS Tracking Toolbox 
 - MATLAB-based scripts with reproducible results  
 
+## Usage
 
-
+1. **Open MATLAB** and change directory to the project root.  
+2. **Ensure required directories are on the MATLAB path**:
+   ```matlab
+   addpath('_common');
+   addpath('_network');
+3. **Run the main.m script**:
