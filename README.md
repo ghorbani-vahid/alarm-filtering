@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/986340686.svg)](https://doi.org/10.5281/zenodo.15464993)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 # ALARM: Average Likelihood for Attack-Resilient Multi-Object Filtering
 
 
