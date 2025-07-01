@@ -6,7 +6,7 @@
 
 This repository contains an implementation of the **Average Likelihood for Attack-Resilient Multi-Object (ALARM) filtering** method, as proposed in:
 
-> V. Ghorbani, A. K. Gostar, Z. Tari, N. Sohrabi, A. Ghorbani & R. Hoseinnezhad,  
+> V. Ghorbani, A. K. Gostar, Z. Tari, G. Battistelli, A. Blair,, A. Ghorbani & R. Hoseinnezhad,  
 > “Robust Filtering for Multi-Object Tracking Against Stealthy Measurement-Oriented Adversarial Attacks,” *Authorea Preprints*, 2025.  
 
 
